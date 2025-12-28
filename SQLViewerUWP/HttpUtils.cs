@@ -14,10 +14,14 @@ namespace SQLViewerUWP
     {
         private static readonly HttpClient _httpClient;
         private static readonly CookieContainer _cookieContainer;
-        private static readonly string _userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36";
+        private static readonly string _userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+        private static readonly string _baseUrl;
 
         static HttpUtils()
         {
+            // Get base URL from config, or use default
+            _baseUrl = ConfigHelper.Get("api_base_url") ?? "https://sql-out.sdcreditech.com";
+            
             _cookieContainer = new CookieContainer();
             var handler = new HttpClientHandler
             {
@@ -42,7 +46,7 @@ namespace SQLViewerUWP
                 { "password", password }
             };
 
-            string url = "https://sql-out.sdcreditech.com/authenticate/";
+            string url = $"{_baseUrl}/authenticate/";
 
             try
             {
@@ -93,7 +97,7 @@ namespace SQLViewerUWP
 
             try
             {
-                string res = await GetAsync("https://sql-out.sdcreditech.com/group/user_all_instances/?tag_codes%5B%5D=can_read", csrftoken, sessionid);
+                string res = await GetAsync($"{_baseUrl}/group/user_all_instances/?tag_codes%5B%5D=can_read", csrftoken, sessionid);
                 JObject? jo = JsonConvert.DeserializeObject<JObject>(res);
                 JArray? ja = jo?["data"] as JArray;
                 
@@ -120,7 +124,7 @@ namespace SQLViewerUWP
             string? csrftoken = ConfigHelper.Get("csrftoken");
             string? sessionid = ConfigHelper.Get("sessionid");
 
-            string res = await GetAsync($"https://sql-out.sdcreditech.com/instance/instance_resource/?instance_name={instanceName}&resource_type=database", csrftoken!, sessionid!);
+            string res = await GetAsync($"{_baseUrl}/instance/instance_resource/?instance_name={instanceName}&resource_type=database", csrftoken!, sessionid!);
             JObject? jo = JsonConvert.DeserializeObject<JObject>(res);
             JArray? ja = jo?["data"] as JArray;
             
@@ -148,7 +152,7 @@ namespace SQLViewerUWP
             string? csrftoken = ConfigHelper.Get("csrftoken");
             string? sessionid = ConfigHelper.Get("sessionid");
 
-            string res = await GetAsync($"https://sql-out.sdcreditech.com/instance/instance_resource/?instance_name={instanceName}&db_name={dbName}&resource_type=table", csrftoken!, sessionid!);
+            string res = await GetAsync($"{_baseUrl}/instance/instance_resource/?instance_name={instanceName}&db_name={dbName}&resource_type=table", csrftoken!, sessionid!);
             JObject? jo = JsonConvert.DeserializeObject<JObject>(res);
             JArray? ja = jo?["data"] as JArray;
             
@@ -170,7 +174,7 @@ namespace SQLViewerUWP
             string? csrftoken = ConfigHelper.Get("csrftoken");
             string? sessionid = ConfigHelper.Get("sessionid");
 
-            string res = await GetAsync($"https://sql-out.sdcreditech.com/instance/instance_resource/?instance_name={instanceName}&db_name={dbName}&tb_name={tableName}&resource_type=column", csrftoken!, sessionid!);
+            string res = await GetAsync($"{_baseUrl}/instance/instance_resource/?instance_name={instanceName}&db_name={dbName}&tb_name={tableName}&resource_type=column", csrftoken!, sessionid!);
             JObject? jo = JsonConvert.DeserializeObject<JObject>(res);
             JArray? ja = jo?["data"] as JArray;
             
@@ -200,7 +204,7 @@ namespace SQLViewerUWP
                 { "tb_name", tableName }
             };
 
-            string res = await PostAsync("https://sql-out.sdcreditech.com/instance/describetable/", formData, csrftoken!, sessionid!);
+            string res = await PostAsync($"{_baseUrl}/instance/describetable/", formData, csrftoken!, sessionid!);
             JObject? jo = JsonConvert.DeserializeObject<JObject>(res);
             string? table = jo?["data"]?["rows"]?[0]?[1]?.ToString();
             return table ?? "";
@@ -222,7 +226,7 @@ namespace SQLViewerUWP
                 { "limit_num", pageSize ?? "100" }
             };
 
-            string res = await PostAsync("https://sql-out.sdcreditech.com/query/", formData, csrftoken!, sessionid!);
+            string res = await PostAsync($"{_baseUrl}/query/", formData, csrftoken!, sessionid!);
             JObject? jo = JsonConvert.DeserializeObject<JObject>(res);
             return jo ?? new JObject();
         }
@@ -243,7 +247,7 @@ namespace SQLViewerUWP
                 { "limit_num", pageSize ?? "100" }
             };
 
-            string res = await PostAsync("https://sql-out.sdcreditech.com/query/", formData, csrftoken!, sessionid!);
+            string res = await PostAsync($"{_baseUrl}/query/", formData, csrftoken!, sessionid!);
             JObject? jo = JsonConvert.DeserializeObject<JObject>(res);
             int count = jo?["data"]?["rows"]?[0]?[0]?.Value<int>() ?? 0;
             return count;
