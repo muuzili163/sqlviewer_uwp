@@ -50,7 +50,17 @@
                          FontSize="12"
                          VerticalScrollBarVisibility="Auto"
                          HorizontalScrollBarVisibility="Auto"
+                         TextChanged="TxtSqlEditor_TextChanged"
                          KeyDown="TxtSqlEditor_KeyDown"/>
+                
+                <ListBox x:Name="LstSqlSuggestions" 
+                         Height="150" MaxWidth="300"
+                         Visibility="Collapsed"
+                         VerticalAlignment="Top"
+                         HorizontalAlignment="Left"
+                         DisplayMemberPath="Text"
+                         MouseDoubleClick="LstSqlSuggestions_MouseDoubleClick"
+                         KeyDown="LstSqlSuggestions_KeyDown"/>
             </Grid>
 
             <!-- Splitter -->

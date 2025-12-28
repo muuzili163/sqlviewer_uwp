@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Newtonsoft.Json.Linq;
+using SQLViewerUWP.Editor;
 
 namespace SQLViewerUWP
 {
@@ -16,12 +17,16 @@ namespace SQLViewerUWP
         private List<string> databases = new List<string>();
         private List<string> tables = new List<string>();
         private bool _isQuerying = false;
+        private SqlContext? _currentContext;
+        private SqlContextAnalyzer? analyzer;
+        private SqlSuggestResolver? resolver;
 
         public SqlEditorControl(string serverName, TabItem tabItem)
         {
             InitializeComponent();
             CurrentServer = serverName;
             CurrentTabItem = tabItem;
+            analyzer = new SqlContextAnalyzer();
         }
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -47,6 +52,10 @@ namespace SQLViewerUWP
             if (!string.IsNullOrEmpty(dbName))
             {
                 CurrentDatabase = dbName;
+                resolver = new SqlSuggestResolver(
+                    DefaultSqlMetadataProvider.GetProviderInstance(), 
+                    CurrentServer, 
+                    CurrentDatabase);
                 await InitTablesAsync();
             }
         }
@@ -184,11 +193,133 @@ namespace SQLViewerUWP
 
         private void TxtSqlEditor_KeyDown(object sender, KeyEventArgs e)
         {
-            // Ctrl+Enter to execute
-            if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.Control)
+            if (LstSqlSuggestions.Visibility == Visibility.Visible)
             {
+                if (e.Key == Key.Down)
+                {
+                    LstSqlSuggestions.SelectedIndex = Math.Min(
+                        LstSqlSuggestions.SelectedIndex + 1, 
+                        LstSqlSuggestions.Items.Count - 1);
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Up)
+                {
+                    LstSqlSuggestions.SelectedIndex = Math.Max(
+                        LstSqlSuggestions.SelectedIndex - 1, 
+                        0);
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Enter || e.Key == Key.Tab)
+                {
+                    ApplySuggestion();
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Escape)
+                {
+                    LstSqlSuggestions.Visibility = Visibility.Collapsed;
+                }
+            }
+            else
+            {
+                // Ctrl+Enter to execute
+                if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.Control)
+                {
+                    e.Handled = true;
+                    _ = HandleQueryAsync();
+                }
+                // Space to show suggestions
+                else if (e.Key == Key.Space && Keyboard.Modifiers == ModifierKeys.Control)
+                {
+                    e.Handled = true;
+                    _ = ShowSuggestionsAsync();
+                }
+            }
+        }
+
+        private async void TxtSqlEditor_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (resolver == null || analyzer == null)
+                return;
+
+            // Auto-show suggestions on certain characters
+            if (TxtSqlEditor.Text.Length > 0)
+            {
+                char lastChar = TxtSqlEditor.Text[Math.Max(0, TxtSqlEditor.CaretIndex - 1)];
+                if (lastChar == '.' || char.IsWhiteSpace(lastChar))
+                {
+                    await ShowSuggestionsAsync();
+                }
+            }
+        }
+
+        private async Task ShowSuggestionsAsync()
+        {
+            if (resolver == null || analyzer == null)
+            {
+                LstSqlSuggestions.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            int caretIndex = TxtSqlEditor.CaretIndex;
+            string sqlText = TxtSqlEditor.Text;
+
+            SqlContext context = analyzer.Analyze(sqlText, caretIndex);
+            _currentContext = context;
+
+            IReadOnlyList<SuggestItem> suggestions = await resolver.ResolveAsync(context);
+
+            if (suggestions == null || suggestions.Count == 0)
+            {
+                LstSqlSuggestions.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            LstSqlSuggestions.ItemsSource = suggestions;
+            LstSqlSuggestions.SelectedIndex = 0;
+
+            // Position the suggestions list box
+            var rect = TxtSqlEditor.GetRectFromCharacterIndex(caretIndex);
+            LstSqlSuggestions.Margin = new Thickness(rect.Left, rect.Bottom + 5, 0, 0);
+
+            LstSqlSuggestions.Visibility = Visibility.Visible;
+        }
+
+        private void ApplySuggestion()
+        {
+            if (LstSqlSuggestions.SelectedItem is not SuggestItem item)
+                return;
+
+            var ctx = _currentContext;
+            if (ctx == null)
+                return;
+
+            // Add space after keyword for better UX
+            string insertText = item.Type == SuggestType.Keyword
+                ? item.Text + " "
+                : item.Text;
+
+            // Replace the token
+            int start = ctx.TokenStartIndex;
+            int length = ctx.TokenLength;
+            
+            string text = TxtSqlEditor.Text;
+            TxtSqlEditor.Text = text.Remove(start, length).Insert(start, insertText);
+            TxtSqlEditor.CaretIndex = start + insertText.Length;
+
+            LstSqlSuggestions.Visibility = Visibility.Collapsed;
+        }
+
+        private void LstSqlSuggestions_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            ApplySuggestion();
+        }
+
+        private void LstSqlSuggestions_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                ApplySuggestion();
                 e.Handled = true;
-                _ = HandleQueryAsync();
             }
         }
     }
