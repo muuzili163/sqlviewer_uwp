@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "SQLViewerWinUI3 (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "SQLViewerWinUI3 (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
