@@ -1,0 +1,92 @@
+<Window
+    x:Class="SQLViewerWinUI3.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Archery互联网SQL审计">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top toolbar -->
+        <Grid Grid.Row="0" Padding="12,8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Server ComboBox -->
+            <ComboBox x:Name="comboBox1" 
+                      Grid.Column="0"
+                      Width="190" 
+                      FontSize="16"
+                      SelectionChanged="ComboBox1_SelectionChanged"/>
+
+            <!-- Spacer -->
+            <Grid Grid.Column="1"/>
+
+            <!-- New Query Button -->
+            <Button x:Name="button3" 
+                    Grid.Column="2"
+                    Content="新建查询" 
+                    Margin="0,0,8,0"
+                    Click="Button3_Click"/>
+
+            <!-- Page Size ComboBox -->
+            <ComboBox x:Name="comboBox2" 
+                      Grid.Column="3"
+                      Width="127" 
+                      FontSize="16"
+                      Margin="0,0,8,0"
+                      SelectionChanged="ComboBox2_SelectionChanged">
+                <x:String>50</x:String>
+                <x:String>100</x:String>
+                <x:String>200</x:String>
+                <x:String>500</x:String>
+                <x:String>1000</x:String>
+            </ComboBox>
+
+            <!-- Login Button -->
+            <Button x:Name="button1" 
+                    Grid.Column="4"
+                    Content="登录" 
+                    Width="167"
+                    Click="Button1_Click"/>
+        </Grid>
+
+        <!-- Main content area with split view -->
+        <Grid Grid.Row="1" Padding="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="215"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- TreeView for database navigation -->
+            <TreeView x:Name="treeView1" 
+                      Grid.Column="0"
+                      FontSize="16"
+                      ItemInvoked="TreeView1_ItemInvoked"
+                      Expanding="TreeView1_Expanding"/>
+
+            <!-- Splitter -->
+            <Grid Grid.Column="1" Width="4" Background="Transparent"/>
+
+            <!-- Tab control for content -->
+            <TabView x:Name="tabControl1" 
+                     Grid.Column="2"
+                     TabCloseRequested="TabControl1_TabCloseRequested"
+                     CanDragTabs="True"
+                     CanReorderTabs="True"
+                     AllowDropTabs="True"/>
+        </Grid>
+    </Grid>
+</Window>
